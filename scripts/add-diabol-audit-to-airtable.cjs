@@ -6,7 +6,8 @@
  */
 
 const Airtable = require('airtable');
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '..', '.env.local') });
 
 const base = new Airtable({ apiKey: process.env.AIRTABLE_API_KEY }).base(process.env.AIRTABLE_BASE_ID);
 
@@ -71,24 +72,24 @@ async function addAudit() {
 
     // 1. Create audit run record
     console.log('Creating audit run record...');
-    const auditRun = await base('Audit Runs').create({
-      'Brand Name': auditData.brandName,
-      'Domain': auditData.domain,
-      'Category': auditData.category,
-      'Audit Date': auditData.auditDate,
-      'Overall Score': auditData.overallScore,
-      'Trust Node Coverage %': auditData.trustNodeCoverage,
-      'Citation Quality Score': auditData.citationQuality,
-      'AI Citation Rate %': auditData.aiCitationRate,
-      'Key Findings': auditData.keyFindings,
-      'Priority 1': auditData.priority1,
-      'Priority 2': auditData.priority2,
-      'Priority 3': auditData.priority3,
-      '30-Day Target': auditData.target30Day,
-      '90-Day Target': auditData.target90Day,
-      '180-Day Target': auditData.target180Day,
-      'Next Audit Date': auditData.nextAuditDate,
-      'Status': 'Complete'
+    const auditRun = await base('Audit_Runs').create({
+      'brand_name': auditData.brandName,
+      'category': auditData.category,
+      'audit_date': auditData.auditDate,
+      'overall_score': auditData.overallScore,
+      'trust_node_coverage': auditData.trustNodesFound,
+      'trust_node_percentage': auditData.trustNodeCoverage / 100, // Convert to decimal for percent field
+      'citation_quality': auditData.citationQuality,
+      'ai_citation_rate': auditData.aiCitationRate / 100, // Convert to decimal for percent field
+      'perplexity_cited': auditData.perplexityCited,
+      'chatgpt_cited': auditData.chatgptCited,
+      'gemini_cited': auditData.geminiCited,
+      'status': 'Complete',
+      'executive_summary': auditData.keyFindings,
+      'top_priority_1': auditData.priority1,
+      'top_priority_2': auditData.priority2,
+      'top_priority_3': auditData.priority3,
+      'next_audit_date': auditData.nextAuditDate
     });
 
     console.log(`✅ Audit run created: ${auditRun.id}\n`);
@@ -126,14 +127,14 @@ async function addAudit() {
     ];
 
     for (const node of trustNodes) {
-      await base('Trust Nodes').create({
-        'Audit Run': [auditRun.id],
-        'Trust Node Name': node.name,
-        'Category': node.category,
-        'Status': node.status,
-        'Quality Score': node.quality,
-        'URL': node.url || '',
-        'Notes': node.notes || ''
+      await base('Trust_Nodes').create({
+        'audit': [auditRun.id],
+        'node_name': node.name,
+        'category': node.category,
+        'present': node.status === 'Found' || node.status === 'Partial',
+        'quality_score': node.quality,
+        'url': node.url || '',
+        'notes': node.notes || ''
       });
     }
 
